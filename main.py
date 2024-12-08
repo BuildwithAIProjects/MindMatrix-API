@@ -4,11 +4,12 @@ import requests
 from fastapi import FastAPI
 from pydantic import BaseModel
 from typing import List
+from fastapi.middleware.cors import CORSMiddleware
 
 app = FastAPI()
 
 # Set your API keys here
-NEWS_API_KEY = 'your-news-api-key'
+NEWS_API_KEY = 'your_news_api-key'
 OPENAI_API_KEY = 'your-openai-api-key'
 DALL_E_API_KEY = 'your-dall-e-api-key'
 IMGFLIP_USERNAME = 'your-imgflip-username'
@@ -17,10 +18,24 @@ IMGFLIP_PASSWORD = 'your-imgflip-password'
 openai.api_key = OPENAI_API_KEY
 
 
+# Add CORS middleware to allow requests from React frontend
+origins = [
+    "http://localhost:5173",  # React app's URL
+    "https://mind-matrix-ui.vercel.app/",
+]
+
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=origins,  # Allows requests from React
+    allow_credentials=True,
+    allow_methods=["*"],  # Allows all HTTP methods (GET, POST, etc.)
+    allow_headers=["*"],  # Allows all headers
+)
+
 # Pydantic models for input and output
 class TextGenerationRequest(BaseModel):
     prompt: str
-    tone: str
+    #tone: str
 
 class ImageGenerationRequest(BaseModel):
     description: str
@@ -58,6 +73,9 @@ def fetch_news(query: str):
     data = response.json()
     return data['articles']
 
+@app.get("/")
+async def read_root():
+    return {"message": "Welcome to MindMatrix API"}
 
 # Route to generate text content using GPT-4
 @app.post("/generateText", response_model=TextGenerationResponse)
